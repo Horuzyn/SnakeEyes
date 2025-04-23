@@ -1,0 +1,108 @@
+#include <iostream>
+#include <SDL.h>
+#include <SDL_image.h>
+#include <cstdlib>
+#include <ctime>
+
+#include "defs.h"
+#include "graphics.h"
+#include "snake.h"
+
+struct Fruit {
+    int x, y;
+    int scale = 24;
+
+    void spawn() {
+        int cols = SCREEN_WIDTH / scale;
+        int rows = SCREEN_HEIGHT / scale;
+        x = (rand() % cols) * scale;
+        y = (rand() % rows) * scale;
+    }
+
+    void render(SDL_Renderer* renderer) {
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+        SDL_Rect rect = {x, y, scale, scale};
+        SDL_RenderFillRect(renderer, &rect);
+    }
+};
+
+int main(int argc, char* argv[]) {
+    srand(static_cast<unsigned int>(time(nullptr)));
+
+    Graphics graphics;
+    graphics.init();
+
+    SDL_Texture* background = graphics.loadTexture("bg.png");
+    SDL_Texture* menuBackground = graphics.loadTexture("menu.png");
+    SDL_Texture* playBtn = graphics.loadTexture("play_button.png");
+    SDL_Texture* gameOverBg = graphics.loadTexture("ending.png");
+    SDL_Texture* againBtn = graphics.loadTexture("play_again.png");
+    SDL_Texture* exitBtn = graphics.loadTexture("exit_button.png");
+
+    if (!background || !menuBackground || !playBtn || !gameOverBg || !againBtn || !exitBtn) {
+        std::cerr << "Khong the tai hinh anh";
+        return -1;
+    }
+
+    if (!graphics.showMainMenu(menuBackground, playBtn)) {
+        graphics.quit();
+        return 0;
+    }
+
+    while (true) {
+        Player snake;
+        Fruit fruit;
+        fruit.spawn();
+
+        int score = 0;
+        bool running = true;
+        SDL_Event e;
+        Uint32 lastUpdateTime = SDL_GetTicks();
+
+        while (running) {
+            while (SDL_PollEvent(&e)) {
+                if (e.type == SDL_QUIT) {
+                    graphics.quit();
+                    return 0;
+                }
+                if (e.type == SDL_KEYDOWN) {
+                    switch (e.key.keysym.sym) {
+                        case SDLK_UP:    if (snake.dir != DOWN)  snake.dir = UP;    break;
+                        case SDLK_DOWN:  if (snake.dir != UP)    snake.dir = DOWN;  break;
+                        case SDLK_LEFT:  if (snake.dir != RIGHT) snake.dir = LEFT;  break;
+                        case SDLK_RIGHT: if (snake.dir != LEFT)  snake.dir = RIGHT; break;
+                    }
+                }
+            }
+
+            Uint32 currentTime = SDL_GetTicks();
+            if (currentTime - lastUpdateTime > 100) {
+                snake.update();
+
+                if (snake.hasCollided()) {
+                    bool restart = graphics.showGameOverScreen(score, gameOverBg, againBtn, exitBtn);
+                    if (!restart) {
+                        graphics.quit();
+                        return 0;
+                    } else {
+                        break;
+                    }
+                }
+
+                if (snake.x == fruit.x && snake.y == fruit.y) {
+                    snake.tail_length++;
+                    score += 10;
+                    fruit.spawn();
+                }
+
+                graphics.prepareScene(background);
+                fruit.render(graphics.renderer);
+                snake.render(graphics.renderer);
+                graphics.presentScene();
+                lastUpdateTime = currentTime;
+            }
+            SDL_Delay(1);
+        }
+    }
+    return 0;
+}

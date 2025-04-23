@@ -1,0 +1,26 @@
+# depslib dependency file v1.0
+1745220765 source:d:\c++\snakeeye\main.cpp
+	<iostream>
+	<SDL.h>
+	<SDL_image.h>
+	<cstdlib>
+	<ctime>
+	"defs.h"
+	"graphics.h"
+	"snake.h"
+
+1745217404 d:\c++\snakeeye\defs.h
+
+1745220718 d:\c++\snakeeye\graphics.h
+	<SDL.h>
+	<SDL_image.h>
+	<SDL_ttf.h>
+	<string>
+	"defs.h"
+
+1745210110 d:\c++\snakeeye\snake.h
+	<vector>
+	<SDL.h>
+	<algorithm>
+	"defs.h"
+
