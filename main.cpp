@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <SDL.h>
 #include <SDL_image.h>
 #include <cstdlib>
@@ -7,6 +8,7 @@
 #include "defs.h"
 #include "graphics.h"
 #include "snake.h"
+#include "sound.h"
 
 struct Fruit {
     int x, y;
@@ -26,11 +28,45 @@ struct Fruit {
     }
 };
 
+void saveScore(int score){
+    std::ofstream file("highscore.txt", std::ios::app);
+
+    if(file.is_open()){
+        file << score << std::endl;
+        file.close();
+    }
+    else{
+        std::cerr << "Khong the luu diem vao file.\n";
+    }
+}
+
+int getHighScore() {
+    std::ifstream file("highscore.txt");
+    int highScore = 0;
+    int score;
+
+    while (file >> score) {  // Đọc từng số điểm từ file
+        if (score > highScore) {
+            highScore = score;  // Lưu điểm cao nhất
+        }
+    }
+
+    file.close();
+    return highScore;
+}
+
+
 int main(int argc, char* argv[]) {
     srand(static_cast<unsigned int>(time(nullptr)));
 
     Graphics graphics;
     graphics.init();
+
+    AudioManager audio;
+    audio.init();
+    if(audio.loadMusic("BGM.mp3")){
+        audio.playMusic(true);
+    }
 
     SDL_Texture* background = graphics.loadTexture("bg.png");
     SDL_Texture* menuBackground = graphics.loadTexture("menu.png");
@@ -38,16 +74,28 @@ int main(int argc, char* argv[]) {
     SDL_Texture* gameOverBg = graphics.loadTexture("ending.png");
     SDL_Texture* againBtn = graphics.loadTexture("play_again.png");
     SDL_Texture* exitBtn = graphics.loadTexture("exit_button.png");
+    SDL_Texture* soundOn = graphics.loadTexture("on_sound.png");
+    SDL_Texture* soundOff = graphics.loadTexture("off_sound.png");
+
+    if (!soundOn || !soundOff) {
+        std::cerr << "Khong the tai am thanh\n";
+        return -1;
+    }
 
     if (!background || !menuBackground || !playBtn || !gameOverBg || !againBtn || !exitBtn) {
         std::cerr << "Khong the tai hinh anh";
         return -1;
     }
 
-    if (!graphics.showMainMenu(menuBackground, playBtn)) {
+    bool isMuted = false;
+    if (!graphics.showMainMenu(menuBackground, playBtn, soundOn, soundOff, isMuted, audio)) {
         graphics.quit();
         return 0;
     }
+
+    int highScore = getHighScore();
+    graphics.renderText("High Score: " + std::to_string(highScore), {0,0,0,0}, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 100);
+
 
     while (true) {
         Player snake;
@@ -80,6 +128,7 @@ int main(int argc, char* argv[]) {
                 snake.update();
 
                 if (snake.hasCollided()) {
+                    saveScore(score);
                     bool restart = graphics.showGameOverScreen(score, gameOverBg, againBtn, exitBtn);
                     if (!restart) {
                         graphics.quit();
@@ -104,5 +153,8 @@ int main(int argc, char* argv[]) {
             SDL_Delay(1);
         }
     }
+
+    audio.cleanup();
+
     return 0;
 }

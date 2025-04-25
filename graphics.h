@@ -1,11 +1,14 @@
+// ========== graphics.h ==========
 #ifndef _GRAPHICS__H
 #define _GRAPHICS__H
 
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
+#include <SDL_mixer.h>
 #include <string>
 #include "defs.h"
+#include "sound.h"
 
 struct Graphics {
     SDL_Renderer *renderer;
@@ -84,27 +87,44 @@ struct Graphics {
         SDL_FreeSurface(surface);
     }
 
-    bool showMainMenu(SDL_Texture* background, SDL_Texture* playButtonTexture) {
+    bool showMainMenu(SDL_Texture* background, SDL_Texture* playButtonTexture, SDL_Texture* soundOn, SDL_Texture* soundOff, bool& isMuted, AudioManager& audio) {
         SDL_Event e;
+
         int btnW = 250, btnH = 100;
         int btnX = SCREEN_WIDTH / 2 - btnW / 2;
         int btnY = SCREEN_HEIGHT / 2;
 
+        int soundSize = 48;
+        int soundX = SCREEN_WIDTH - soundSize - 20;
+        int soundY = 20;
+
         while (true) {
             while (SDL_PollEvent(&e)) {
                 if (e.type == SDL_QUIT) return false;
+
                 if (e.type == SDL_MOUSEBUTTONDOWN) {
                     int mx = e.button.x;
                     int my = e.button.y;
+
                     if (mx >= btnX && mx <= btnX + btnW && my >= btnY && my <= btnY + btnH) {
                         return true;
+                    }
+
+                    if (mx >= soundX && mx <= soundX + soundSize && my >= soundY && my <= soundY + soundSize) {
+                        isMuted = !isMuted;
+                        Mix_VolumeMusic(isMuted ? 0 : MIX_MAX_VOLUME);
                     }
                 }
             }
 
             prepareScene(background);
-            SDL_Rect dst = {btnX, btnY, btnW, btnH};
-            SDL_RenderCopy(renderer, playButtonTexture, NULL, &dst);
+
+            SDL_Rect playRect = {btnX, btnY, btnW, btnH};
+            SDL_RenderCopy(renderer, playButtonTexture, NULL, &playRect);
+
+            SDL_Rect soundRect = {soundX, soundY, soundSize, soundSize};
+            SDL_RenderCopy(renderer, isMuted ? soundOff : soundOn, NULL, &soundRect);
+
             presentScene();
             SDL_Delay(16);
         }
