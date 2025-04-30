@@ -76,6 +76,10 @@ int main(int argc, char* argv[]) {
     SDL_Texture* exitBtn = graphics.loadTexture("exit_button.png");
     SDL_Texture* soundOn = graphics.loadTexture("on_sound.png");
     SDL_Texture* soundOff = graphics.loadTexture("off_sound.png");
+    SDL_Texture* scoreBtn = graphics.loadTexture("score.png");
+    SDL_Texture* backBtn = graphics.loadTexture("back.png");
+
+    graphics.backBtn = backBtn;
 
     if (!soundOn || !soundOff) {
         std::cerr << "Khong the tai am thanh\n";
@@ -88,7 +92,7 @@ int main(int argc, char* argv[]) {
     }
 
     bool isMuted = false;
-    if (!graphics.showMainMenu(menuBackground, playBtn, soundOn, soundOff, isMuted, audio)) {
+    if (!graphics.showMainMenu(menuBackground, playBtn, scoreBtn, soundOn, soundOff, isMuted, audio)) {
         graphics.quit();
         return 0;
     }

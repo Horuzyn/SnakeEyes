@@ -7,6 +7,9 @@
 #include <SDL_ttf.h>
 #include <SDL_mixer.h>
 #include <string>
+#include <vector>
+#include <fstream>
+#include <algorithm>
 #include "defs.h"
 #include "sound.h"
 
@@ -14,6 +17,7 @@ struct Graphics {
     SDL_Renderer *renderer;
     SDL_Window *window;
     TTF_Font* font = nullptr;
+    SDL_Texture* backBtn = nullptr; // thêm nút quay lại
 
     void logErrorAndExit(const char* msg, const char* error) {
         SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_ERROR, "%s: %s", msg, error);
@@ -46,6 +50,8 @@ struct Graphics {
         font = TTF_OpenFont("Arial.ttf", 48);
         if (!font)
             logErrorAndExit("LoadFont", TTF_GetError());
+
+        backBtn = loadTexture("back.png");
     }
 
     void prepareScene(SDL_Texture * background) {
@@ -87,12 +93,68 @@ struct Graphics {
         SDL_FreeSurface(surface);
     }
 
-    bool showMainMenu(SDL_Texture* background, SDL_Texture* playButtonTexture, SDL_Texture* soundOn, SDL_Texture* soundOff, bool& isMuted, AudioManager& audio) {
+    void showScoreList(SDL_Texture* background) {
+        std::ifstream file("highscore.txt");
+        std::vector<int> scores;
+        int s;
+
+        while (file >> s) {
+            scores.push_back(s);
+        }
+        file.close();
+
+        std::sort(scores.begin(), scores.end(), std::greater<int>());
+
+        bool showing = true;
+        SDL_Event e;
+
+        int backBtnSize = 64;
+        int backX = 20;
+        int backY = 20;
+
+        while (showing) {
+            while (SDL_PollEvent(&e)) {
+                if (e.type == SDL_QUIT) exit(0);
+                if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)
+                    showing = false;
+
+                if (e.type == SDL_MOUSEBUTTONDOWN) {
+                    int mx = e.button.x;
+                    int my = e.button.y;
+                    if (mx >= backX && mx <= backX + backBtnSize && my >= backY && my <= backY + backBtnSize)
+                        showing = false;
+                }
+            }
+
+            prepareScene(background);
+
+            SDL_Color white = {0, 0, 0, 255};
+            renderText("HIGH SCORES", white, SCREEN_WIDTH / 2, 50);
+
+            int y = 120;
+            for (size_t i = 0; i < scores.size() && i < 10; ++i) {
+                renderText(std::to_string(i + 1) + ". " + std::to_string(scores[i]), white, SCREEN_WIDTH / 2, y);
+                y += 50;
+            }
+
+            SDL_Rect backRect = {backX, backY, backBtnSize, backBtnSize};
+            SDL_RenderCopy(renderer, backBtn, NULL, &backRect);
+
+            presentScene();
+            SDL_Delay(16);
+        }
+    }
+
+    bool showMainMenu(SDL_Texture* background, SDL_Texture* playButtonTexture, SDL_Texture* scoreBtn, SDL_Texture* soundOn, SDL_Texture* soundOff, bool& isMuted, AudioManager& audio) {
         SDL_Event e;
 
         int btnW = 250, btnH = 100;
         int btnX = SCREEN_WIDTH / 2 - btnW / 2;
         int btnY = SCREEN_HEIGHT / 2;
+
+        int scoreBtnW = 200, scoreBtnH = 80;
+        int scoreBtnX = SCREEN_WIDTH / 2 - scoreBtnW / 2;
+        int scoreBtnY = btnY + 120;
 
         int soundSize = 48;
         int soundX = SCREEN_WIDTH - soundSize - 20;
@@ -110,6 +172,10 @@ struct Graphics {
                         return true;
                     }
 
+                    if (mx >= scoreBtnX && mx <= scoreBtnX + scoreBtnW && my >= scoreBtnY && my <= scoreBtnY + scoreBtnH) {
+                        showScoreList(background);
+                    }
+
                     if (mx >= soundX && mx <= soundX + soundSize && my >= soundY && my <= soundY + soundSize) {
                         isMuted = !isMuted;
                         Mix_VolumeMusic(isMuted ? 0 : MIX_MAX_VOLUME);
@@ -121,6 +187,9 @@ struct Graphics {
 
             SDL_Rect playRect = {btnX, btnY, btnW, btnH};
             SDL_RenderCopy(renderer, playButtonTexture, NULL, &playRect);
+
+            SDL_Rect scoreRect = {scoreBtnX, scoreBtnY, scoreBtnW, scoreBtnH};
+            SDL_RenderCopy(renderer, scoreBtn, NULL, &scoreRect);
 
             SDL_Rect soundRect = {soundX, soundY, soundSize, soundSize};
             SDL_RenderCopy(renderer, isMuted ? soundOff : soundOn, NULL, &soundRect);
