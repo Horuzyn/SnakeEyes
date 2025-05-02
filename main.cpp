@@ -68,6 +68,8 @@ int main(int argc, char* argv[]) {
         audio.playMusic(true);
     }
 
+    audio.loadEffect("Eatting.mp3");
+
     SDL_Texture* background = graphics.loadTexture("bg.png");
     SDL_Texture* menuBackground = graphics.loadTexture("menu.png");
     SDL_Texture* playBtn = graphics.loadTexture("play_button.png");
@@ -108,6 +110,7 @@ int main(int argc, char* argv[]) {
 
         int score = 0;
         bool running = true;
+        bool isPaused = false;
         SDL_Event e;
         Uint32 lastUpdateTime = SDL_GetTicks();
 
@@ -119,16 +122,36 @@ int main(int argc, char* argv[]) {
                 }
                 if (e.type == SDL_KEYDOWN) {
                     switch (e.key.keysym.sym) {
-                        case SDLK_UP:    if (snake.dir != DOWN)  snake.dir = UP;    break;
-                        case SDLK_DOWN:  if (snake.dir != UP)    snake.dir = DOWN;  break;
+                        case SDLK_UP:    if (snake.dir != DOWN) snake.dir = UP;    break;
+                        case SDLK_w: if (snake.dir != DOWN) snake.dir = UP; break;
+                        case SDLK_DOWN:  if (snake.dir != UP) snake.dir = DOWN;  break;
+                        case SDLK_s: if (snake.dir != UP) snake.dir = DOWN; break;
                         case SDLK_LEFT:  if (snake.dir != RIGHT) snake.dir = LEFT;  break;
-                        case SDLK_RIGHT: if (snake.dir != LEFT)  snake.dir = RIGHT; break;
+                        case SDLK_a: if (snake.dir != RIGHT) snake.dir = LEFT; break;
+                        case SDLK_RIGHT: if (snake.dir != LEFT) snake.dir = RIGHT; break;
+                        case SDLK_d: if (snake.dir != LEFT) snake.dir = RIGHT; break;
+                        case SDLK_p: isPaused = !isPaused; break;
                     }
                 }
             }
 
             Uint32 currentTime = SDL_GetTicks();
             if (currentTime - lastUpdateTime > 100) {
+
+                if(isPaused){
+                    SDL_SetRenderDrawBlendMode(graphics.renderer, SDL_BLENDMODE_BLEND);
+                    SDL_SetRenderDrawColor(graphics.renderer, 0,0,0,150);
+                    SDL_Rect overlay = {0,0, SCREEN_WIDTH, SCREEN_HEIGHT};
+                    SDL_RenderFillRect(graphics.renderer, &overlay);
+
+                    SDL_Color white = {255,255,255,255};
+                    graphics.renderText("PAUSE", white, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+
+                    graphics.presentScene();
+                    SDL_Delay(100);
+                    continue;
+                }
+
                 snake.update();
 
                 if (snake.hasCollided()) {
@@ -146,6 +169,7 @@ int main(int argc, char* argv[]) {
                     snake.tail_length++;
                     score += 10;
                     fruit.spawn();
+                    audio.playEffect();
                 }
 
                 graphics.prepareScene(background);

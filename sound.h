@@ -7,6 +7,7 @@
 
 struct AudioManager {
     Mix_Music* bgm = nullptr;
+    Mix_Chunk* eatSound = nullptr;
 
     void init() {
         if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
@@ -17,7 +18,16 @@ struct AudioManager {
     bool loadMusic(const std::string& filePath) {
         bgm = Mix_LoadMUS(filePath.c_str());
         if (!bgm) {
-            SDL_Log("Failed to load background music! SDL_mixer Error: %s\n", Mix_GetError());
+            SDL_Log("Failed to load background music! %s\n", Mix_GetError());
+            return false;
+        }
+        return true;
+    }
+
+    bool loadEffect(const std::string& filePath){
+        eatSound = Mix_LoadWAV(filePath.c_str());
+        if (!eatSound){
+            SDL_Log("Failed to load background music! %s\n", Mix_GetError());
             return false;
         }
         return true;
@@ -29,6 +39,10 @@ struct AudioManager {
         }
     }
 
+    void playEffect(){
+        if (eatSound) Mix_PlayChannel(-1, eatSound, 0);
+    }
+
     void stopMusic() {
         Mix_HaltMusic();
     }
@@ -37,6 +51,10 @@ struct AudioManager {
         if (bgm) {
             Mix_FreeMusic(bgm);
             bgm = nullptr;
+        }
+        if (eatSound){
+            Mix_FreeChunk(eatSound);
+            eatSound = nullptr;
         }
         Mix_CloseAudio();
     }
