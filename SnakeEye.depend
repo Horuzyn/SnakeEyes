@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1746202715 source:d:\c++\snakeeye\main.cpp
+1746570457 source:d:\c++\snakeeye\main.cpp
 	<iostream>
 	<fstream>
 	<SDL.h>
@@ -10,10 +10,11 @@
 	"graphics.h"
 	"snake.h"
 	"sound.h"
+	"fruit.h"
 
 1746015376 d:\c++\snakeeye\defs.h
 
-1746035494 d:\c++\snakeeye\graphics.h
+1746515405 d:\c++\snakeeye\graphics.h
 	<SDL.h>
 	<SDL_image.h>
 	<SDL_ttf.h>
@@ -25,7 +26,7 @@
 	"defs.h"
 	"sound.h"
 
-1745210110 d:\c++\snakeeye\snake.h
+1746571878 d:\c++\snakeeye\snake.h
 	<vector>
 	<SDL.h>
 	<algorithm>
@@ -35,4 +36,9 @@
 	<SDL.h>
 	<SDL_mixer.h>
 	<string>
+
+1746564452 d:\c++\snakeeye\fruit.h
+	<SDL.h>
+	<cstdlib>
+	"defs.h"
 

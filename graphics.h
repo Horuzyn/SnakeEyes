@@ -145,7 +145,7 @@ struct Graphics {
         }
     }
 
-    bool showMainMenu(SDL_Texture* background, SDL_Texture* playButtonTexture, SDL_Texture* scoreBtn, SDL_Texture* soundOn, SDL_Texture* soundOff, bool& isMuted, AudioManager& audio) {
+    bool showMainMenu(SDL_Texture* background, SDL_Texture* playButtonTexture, SDL_Texture* scoreBtn, SDL_Texture* soundOn, SDL_Texture* soundOff, bool& isMuted, AudioManager& audio, bool& throughWall, SDL_Texture* wallOn, SDL_Texture* wallOff) {
         SDL_Event e;
 
         int btnW = 250, btnH = 100;
@@ -159,6 +159,10 @@ struct Graphics {
         int soundSize = 48;
         int soundX = SCREEN_WIDTH - soundSize - 20;
         int soundY = 20;
+
+        int wallBtnSize = 58;
+        int wallX = soundX - wallBtnSize - 16;
+        int wallY = soundY - 4;
 
         while (true) {
             while (SDL_PollEvent(&e)) {
@@ -180,6 +184,10 @@ struct Graphics {
                         isMuted = !isMuted;
                         Mix_VolumeMusic(isMuted ? 0 : MIX_MAX_VOLUME);
                     }
+
+                    if (mx >= wallX && mx <= wallX + wallBtnSize && my >= wallY && my <= wallY + wallBtnSize){
+                        throughWall = !throughWall;
+                    }
                 }
             }
 
@@ -193,6 +201,9 @@ struct Graphics {
 
             SDL_Rect soundRect = {soundX, soundY, soundSize, soundSize};
             SDL_RenderCopy(renderer, isMuted ? soundOff : soundOn, NULL, &soundRect);
+
+            SDL_Rect wallRect = {wallX, wallY, wallBtnSize, wallBtnSize};
+            SDL_RenderCopy(renderer, throughWall ? wallOn : wallOff, NULL, &wallRect);
 
             presentScene();
             SDL_Delay(16);

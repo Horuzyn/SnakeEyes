@@ -9,24 +9,7 @@
 #include "graphics.h"
 #include "snake.h"
 #include "sound.h"
-
-struct Fruit {
-    int x, y;
-    int scale = 24;
-
-    void spawn() {
-        int cols = SCREEN_WIDTH / scale;
-        int rows = SCREEN_HEIGHT / scale;
-        x = (rand() % cols) * scale;
-        y = (rand() % rows) * scale;
-    }
-
-    void render(SDL_Renderer* renderer) {
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-        SDL_Rect rect = {x, y, scale, scale};
-        SDL_RenderFillRect(renderer, &rect);
-    }
-};
+#include "fruit.h"
 
 void saveScore(int score){
     std::ofstream file("highscore.txt", std::ios::app);
@@ -40,14 +23,15 @@ void saveScore(int score){
     }
 }
 
+
 int getHighScore() {
     std::ifstream file("highscore.txt");
     int highScore = 0;
     int score;
 
-    while (file >> score) {  // Đọc từng số điểm từ file
+    while (file >> score) {
         if (score > highScore) {
-            highScore = score;  // Lưu điểm cao nhất
+            highScore = score;
         }
     }
 
@@ -69,6 +53,7 @@ int main(int argc, char* argv[]) {
     }
 
     audio.loadEffect("Eatting.mp3");
+    Mix_Chunk* powerSound = Mix_LoadWAV("Power.mp3");
 
     SDL_Texture* background = graphics.loadTexture("bg.png");
     SDL_Texture* menuBackground = graphics.loadTexture("menu.png");
@@ -80,6 +65,14 @@ int main(int argc, char* argv[]) {
     SDL_Texture* soundOff = graphics.loadTexture("off_sound.png");
     SDL_Texture* scoreBtn = graphics.loadTexture("score.png");
     SDL_Texture* backBtn = graphics.loadTexture("back.png");
+    SDL_Texture* wallOn = graphics.loadTexture("wallon.png");
+    SDL_Texture* wallOff = graphics.loadTexture("walloff.png");
+    SDL_Texture* fruitTexture = graphics.loadTexture("R_Apple.png");
+    SDL_Texture* powerFruitTexture = graphics.loadTexture("G_Apple.png");
+    SDL_Texture* snakeHead = graphics.loadTexture("snake_head.png");
+    SDL_Texture* bodyHorizontal = graphics.loadTexture("snake_horizontal.png");
+    SDL_Texture* bodyVertical = graphics.loadTexture("snake_vertical.png");
+    SDL_Texture* bodyCorner = graphics.loadTexture("snake_corner.png");
 
     graphics.backBtn = backBtn;
 
@@ -93,8 +86,10 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
+    bool throughWall = false;
+
     bool isMuted = false;
-    if (!graphics.showMainMenu(menuBackground, playBtn, scoreBtn, soundOn, soundOff, isMuted, audio)) {
+    if (!graphics.showMainMenu(menuBackground, playBtn, scoreBtn, soundOn, soundOff, isMuted, audio, throughWall, wallOn, wallOff)) {
         graphics.quit();
         return 0;
     }
@@ -102,11 +97,15 @@ int main(int argc, char* argv[]) {
     int highScore = getHighScore();
     graphics.renderText("High Score: " + std::to_string(highScore), {0,0,0,0}, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 100);
 
-
     while (true) {
         Player snake;
+        snake.allowThroughWall = throughWall;
         Fruit fruit;
         fruit.spawn();
+
+        SuperFruit superfruit;
+        Uint32 lastSpecialSpawn = SDL_GetTicks();
+        int speed = 100;
 
         int score = 0;
         bool running = true;
@@ -136,7 +135,7 @@ int main(int argc, char* argv[]) {
             }
 
             Uint32 currentTime = SDL_GetTicks();
-            if (currentTime - lastUpdateTime > 100) {
+            if (currentTime - lastUpdateTime > speed) {
 
                 if(isPaused){
                     SDL_SetRenderDrawBlendMode(graphics.renderer, SDL_BLENDMODE_BLEND);
@@ -154,6 +153,12 @@ int main(int argc, char* argv[]) {
 
                 snake.update();
 
+            if (!superfruit.isActive && SDL_GetTicks() - lastSpecialSpawn >= 10000){
+                superfruit.spawn();
+                lastSpecialSpawn = SDL_GetTicks();
+            }
+            superfruit.checkTimeout();
+
                 if (snake.hasCollided()) {
                     saveScore(score);
                     bool restart = graphics.showGameOverScreen(score, gameOverBg, againBtn, exitBtn);
@@ -165,7 +170,20 @@ int main(int argc, char* argv[]) {
                     }
                 }
 
-                if (snake.x == fruit.x && snake.y == fruit.y) {
+                SDL_Rect head = {snake.x, snake.y, snake.scale, snake.scale};
+                SDL_Rect fruitRect = {fruit.x, fruit.y, fruit.scale, fruit.scale};
+                SDL_Rect superRect = {superfruit.x, superfruit.y, superfruit.scale, superfruit.scale};
+
+                if (superfruit.isActive && SDL_HasIntersection(&head, &superRect)){
+                    snake.tail_length++;
+                    score += 30;
+                    const int MIN_SPEED = 80;
+                    if(speed > MIN_SPEED) speed -= 2;
+                    superfruit.isActive = false;
+                    Mix_PlayChannel(-1, powerSound, 0);
+                }
+
+                if (SDL_HasIntersection(&head, &fruitRect)) {
                     snake.tail_length++;
                     score += 10;
                     fruit.spawn();
@@ -173,8 +191,9 @@ int main(int argc, char* argv[]) {
                 }
 
                 graphics.prepareScene(background);
-                fruit.render(graphics.renderer);
-                snake.render(graphics.renderer);
+                fruit.render(graphics.renderer, fruitTexture);
+                superfruit.render(graphics.renderer, powerFruitTexture);
+                snake.render(graphics.renderer, snakeHead, bodyHorizontal, bodyVertical, bodyCorner);
                 graphics.presentScene();
                 lastUpdateTime = currentTime;
             }
@@ -183,6 +202,16 @@ int main(int argc, char* argv[]) {
     }
 
     audio.cleanup();
+    if (powerSound){
+        Mix_FreeChunk(powerSound);
+    }
+
+    SDL_DestroyTexture(fruitTexture);
+    SDL_DestroyTexture(powerFruitTexture);
+    SDL_DestroyTexture(snakeHead);
+    SDL_DestroyTexture(bodyHorizontal);
+    SDL_DestroyTexture(bodyVertical);
+    SDL_DestroyTexture(bodyCorner);
 
     return 0;
 }

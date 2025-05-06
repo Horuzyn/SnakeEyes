@@ -9,6 +9,7 @@
 enum Direction { UP, DOWN, LEFT, RIGHT };
 
 struct Player {
+    bool allowThroughWall = false;
     int x = 0, y = 0;
     int scale = 24;
     int tail_length = 5;
@@ -17,7 +18,6 @@ struct Player {
     std::vector<int> tail_y;
 
     void update() {
-        // Lưu vị trí hiện tại vào tail
         tail_x.push_back(x);
         tail_y.push_back(y);
 
@@ -26,35 +26,55 @@ struct Player {
             tail_y.erase(tail_y.begin());
         }
 
-        // Di chuyển đầu theo hướng
         switch (dir) {
             case UP:    y -= scale; break;
             case DOWN:  y += scale; break;
             case LEFT:  x -= scale; break;
             case RIGHT: x += scale; break;
         }
+
+        if(allowThroughWall){
+            if (x < 0) x = SCREEN_WIDTH - scale;
+            if (x >= SCREEN_WIDTH) x = 0;
+            if (y < 0) y = SCREEN_HEIGHT - scale;
+            if (y >= SCREEN_HEIGHT) y = 0;
+        }
     }
 
-    void render(SDL_Renderer* renderer) {
-        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); // màu xanh lá cho thân
-
+    void render(SDL_Renderer* renderer, SDL_Texture* headTexture, SDL_Texture* bodyH, SDL_Texture* bodyV, SDL_Texture* bodyC) {
         int n = std::min(tail_length, (int)tail_x.size());
         for (int i = 0; i < n; ++i) {
             SDL_Rect part = {tail_x[i], tail_y[i], scale, scale};
-            SDL_RenderFillRect(renderer, &part);
+
+            if(i>0){
+                int dx = tail_x[i] - tail_x[i - 1];
+                int dy = tail_y[i] - tail_y[i - 1];
+
+                if(dx != 0 && dy == 0){
+                    SDL_RenderCopy(renderer, bodyH, NULL, &part);
+                }
+                else if(dx == 0 && dy != 0){
+                    SDL_RenderCopy(renderer, bodyV, NULL, &part);
+                }
+                else{
+                    SDL_RenderCopy(renderer, bodyC, NULL, &part);
+                }
+            }
+            else{
+                SDL_RenderCopy(renderer, bodyH, NULL, &part);
+            }
         }
 
-        SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255); // đầu rắn
         SDL_Rect head = {x, y, scale, scale};
-        SDL_RenderFillRect(renderer, &head);
+        SDL_RenderCopy(renderer, headTexture, NULL, &head);
     }
 
     bool hasCollided() {
-    // Va vào tường
-    if (x < 0 || x + scale > SCREEN_WIDTH || y < 0 || y + scale > SCREEN_HEIGHT)
-        return true;
+    if (!allowThroughWall){
+        if (x < 0 || x + scale > SCREEN_WIDTH || y < 0 || y + scale > SCREEN_HEIGHT)
+            return true;
+    }
 
-    // Va vào chính mình
     for (int i = 0; i < (int)tail_x.size(); ++i) {
         if (x == tail_x[i] && y == tail_y[i]) {
             return true;
@@ -62,7 +82,7 @@ struct Player {
     }
 
     return false;
-}
+    }
 };
 
 
