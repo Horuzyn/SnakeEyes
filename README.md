@@ -28,3 +28,10 @@
 - Táo đỏ: +10 điểm
 - Táo vàng: +30 điểm, -2 speed (speed càng thấp snake càng di chuyển nhanh)
 
+## Về source code
+- snake.h: Quản lý con rắn (Player), gồm các thuộc tính như tọa độ, chiều dài thân rắn, và các phương thức như update(), render(), và hasCollided() để cập nhật và vẽ rắn.
+- sound.h: Xử lý âm thanh, sử dụng thư viện SDL_mixer để phát nhạc nền và hiệu ứng âm thanh như khi rắn ăn mồi.
+- defs.h: Chứa các hằng số như kích thước màn hình (SCREEN_WIDTH, SCREEN_HEIGHT), tiêu đề cửa sổ.
+- fruit.h: Quản lý mồi và super fruit, xác định cách thức spawn và render chúng.
+- graphics.h: Chịu trách nhiệm vẽ và hiển thị các thành phần của game, như nền, nút bấm, điểm số, và các texture.
+- main.cpp: Làm nhiệm chính để khởi chạy game, bao gồm vòng lặp game, xử lý sự kiện, điểm số, và quản lý các module.
