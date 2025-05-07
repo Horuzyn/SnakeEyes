@@ -4,11 +4,11 @@
 - Đề tài trò chơi: rắn săn mồi cổ điển
 - Đề xuất ngưỡng điểm: 8.0
 
-Mô tả trò chơi
+##Mô tả trò chơi
 - SnakeEyes là một trò chơi dựa trên mô típ game rắn săn mồi cổ điển. Cố gắng để đạt được điểm cao nhất có thể bằng cách ăn mồi và đồng thời, tránh va chạm để có thể tiếp tục được trò chơi.
 
-Cách chơi
-Bắt đầu trò chơi:
+##Cách chơi
+###Bắt đầu trò chơi:
 - Khi khởi động gane, người chơi sẽ được đưa tới menu chính với 4 nút: Play, Score, Wall Mode, Background Sound
 - Ấn nút Play để bắt đầu trò chơi
 - Nếu người chơi muốn tắt nhạc nền, có thể ấn vào nút Background Sound ở góc phải phía trên
